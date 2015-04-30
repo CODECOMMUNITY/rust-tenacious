@@ -33,6 +33,18 @@ fn test() {
     let x = quux();
     let y = x; //~ ERROR
 }
+
+fn mk() -> Foo {
+    Foo //~ ERROR
+}
+
+impl Foo {
+    fn destroy(self) {}
+}
+
+fn nothing() {
+    mk().destroy() //~ ERROR
+}
 #[derive(Debug)]
 #[no_move]
 struct Foo;

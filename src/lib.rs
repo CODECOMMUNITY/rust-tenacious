@@ -140,7 +140,6 @@ fn is_ty_no_move(tcx: &ty::ctxt, t: ty::Ty) -> bool {
 fn is_in_let(tcx: &ty::ctxt, id: NodeId) -> bool {
     if let ast_map::NodeStmt(ref st) = tcx.map.get(tcx.map.get_parent(id)) {
         if let StmtDecl(..) = st.node {
-            println!("found");
             return true
         }
     }
