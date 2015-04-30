@@ -11,6 +11,7 @@ use rustc::plugin::Registry;
 use rustc::lint::LintPassObject;
 
 use syntax::ast::*;
+use syntax::ast_map;
 use syntax::visit;
 use syntax::codemap::Span;
 use rustc::lint::{Context, LintPass, LintArray};
@@ -79,21 +80,19 @@ impl<'a, 'tcx: 'a> euv::Delegate<'tcx> for TenaciousDelegate<'a, 'tcx> {
                cmt: cmt<'tcx>, mode: euv::ConsumeMode) {
         if let categorization::cat_rvalue(_) = cmt.cat {
             // Ignore `let x = rvalue()`
-            return;
+            if is_in_let(self.0.tcx, cmt.id) {
+                return;
+            }
         }
         if let euv::Move(..) = mode {
             if is_ty_no_move(self.0.tcx, cmt.ty) {
                 self.0.span_lint(MOVED_NO_MOVE, consume_span,
-                                 &format!("#[no_move] type `{}` moved", cmt.ty.repr(self.0.tcx))[..])
+                                 &format!("#[no_move] type `{}` moved", cmt.ty.repr(self.0.tcx))[..]);
             }
         }
 
     }
     fn matched_pat(&mut self, pat: &Pat, cmt: cmt<'tcx>, mode: euv::MatchMode) {
-        if let categorization::cat_rvalue(_) = cmt.cat {
-            // Ignore `let x = rvalue()`
-            return;
-        }
         if let euv::MovingMatch = mode {
             if is_ty_no_move(self.0.tcx, cmt.ty) {
                 self.0.span_lint(MOVED_NO_MOVE, pat.span,
@@ -103,7 +102,7 @@ impl<'a, 'tcx: 'a> euv::Delegate<'tcx> for TenaciousDelegate<'a, 'tcx> {
     }
     fn consume_pat(&mut self, pat: &Pat, cmt: cmt<'tcx>, mode: euv::ConsumeMode) {
         if let categorization::cat_rvalue(_) = cmt.cat {
-            // Ignore `let x = rvalue()`
+            // Ignore `let x = ...`
             return;
         }
         if let euv::Move(_) = mode {
@@ -135,4 +134,15 @@ fn is_ty_no_move(tcx: &ty::ctxt, t: ty::Ty) -> bool {
         }
     });
     found
+}
+
+
+fn is_in_let(tcx: &ty::ctxt, id: NodeId) -> bool {
+    if let ast_map::NodeStmt(ref st) = tcx.map.get(tcx.map.get_parent(id)) {
+        if let StmtDecl(..) = st.node {
+            println!("found");
+            return true
+        }
+    }
+    false
 }

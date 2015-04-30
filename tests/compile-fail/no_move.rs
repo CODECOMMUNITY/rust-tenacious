@@ -20,7 +20,7 @@ fn bar(x: FooBar) {
 
 fn baz() {
     let mut x = Vec::new();
-    x.push(Foo);
+    x.push(Foo); //~ ERROR
     let y = x; //~ ERROR #[no_move] type `collections::vec::Vec<Foo>` moved
 }
 
